@@ -41,11 +41,3 @@ This project goes beyond basic ETL — it **watches a folder in real-time**, val
 ✅ Safe re-runs → Script is idempotent; running multiple times won’t cause duplicate inserts.  
 ✅ Fail-safe logging → Every step (detected, skipped, ingested, updated) is logged clearly.  
 
----
-
-## ⚙️ Setup
-
-### 1. Clone the repo
-```bash
-git clone https://github.com/<your-username>/auto-ingestor.git
-cd auto-ingestor
