@@ -1,0 +1,1 @@
+# Auto-Ingestor-Smart-Excel-PostgreSQL-Pipeline-with-Change-Detection
