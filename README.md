@@ -1,43 +1,82 @@
-# Auto Ingestor: Smart Excel → PostgreSQL Pipeline with Change Detection
+# 📂 Smart Excel-to-Postgres Pipeline with Watchdog Automation
 
-🚀 A production-ready Python pipeline that **automatically detects new or updated Excel reports in a shared folder** and ingests them into PostgreSQL with **zero duplicates** and **robust metadata tracking**.  
+## 📖 Overview  
+This project is a **Python-based automated pipeline** that monitors a shared folder for Excel files and smartly syncs them into a **PostgreSQL database**.  
 
-This project goes beyond basic ETL — it **watches a folder in real-time**, validates schemas, tracks metadata, computes checksums, detects row-level changes, and handles corner cases gracefully.  
+Unlike naive ingestion scripts that reprocess everything on each change, this solution:  
+- Handles **real-time file monitoring**  
+- Tracks **metadata consistency**  
+- Prevents **duplicate/unnecessary processing**  
+- Supports **incremental updates** when rows are added  
+- Logs all important events with clean & simple messages  
 
----
-
-## ✨ Features
-
-- 📂 **Folder Watcher** – constantly monitors a shared folder for new/modified Excel files.  
-- 🧾 **Metadata Tracking** – every report gets a unique `report_id` and detailed metadata record in `report_metadata`.  
-- 🔒 **Schema Validation** – if the Excel schema doesn’t match expectations, ingestion is blocked and metadata is marked as `pending`.  
-- 🧮 **Smart Row Deduplication** – only new or changed rows are inserted into `raw_report_jfrog`, thanks to a hash-based row tracking mechanism (`row_tracking` table).  
-- ⚡ **Efficient Change Detection** – resaving a file without changes won’t trigger re-ingestion.  
-- 🛠 **Metadata Updates** – if the file name changes (e.g., new cycle date), corresponding metadata gets updated automatically.  
-- 🗄 **PostgreSQL Integration** – designed with `psycopg2` and `pandas` for seamless DB + Excel handling.  
-- 📜 **Concise Logging** – clear logs both in console and `process.log` for quick debugging.  
+It’s designed with **team workflows** in mind — where multiple users might open, edit, or re-save files, even with no real changes.  
 
 ---
 
-## 🧩 Concepts Used
-
-- **Watchdog** → For real-time folder monitoring.  
-- **PostgreSQL** → Persistent storage for metadata + row-level data.  
-- **UUIDs** → Each report gets a globally unique ID.  
-- **SHA256 Checksums** → File integrity + row-level change detection.  
-- **Schema Validation** → Guards against wrong or incomplete data.  
-- **Row Hashing + Tracking Table** → Ensures only new rows are inserted, preventing duplicates.  
-- **ETL Pattern** → Extract (Excel) → Transform (metadata/validation) → Load (Postgres).  
+## ⚡ Key Features  
+- ✅ Monitors a folder continuously for `.xlsx` files  
+- ✅ Automatically detects new or modified files  
+- ✅ Loads only **changed rows** (not the entire file again)  
+- ✅ Maintains a **report metadata table** in sync with file info  
+- ✅ Ignores files that are opened & saved without actual changes  
+- ✅ Updates metadata when details (like dates in filenames/sheet names) change  
+- ✅ Uses **row-level hashing** for deduplication  
+- ✅ Logs every action (plain, minimal, and readable logs)  
 
 ---
 
-## 🔍 Corner Cases Handled
+## 🛠️ Technologies Used  
+- 🐍 Python  
+- 📊 Pandas (Excel reading & DataFrames)  
+- 🐘 Psycopg2 (PostgreSQL connection)  
+- 👀 Watchdog (filesystem monitoring)  
+- 🔑 Hashlib (row-level deduplication with SHA256 hashes)  
+- 📝 Logging (simple log tracking)  
 
-✅ Schema mismatch → Report metadata stored with `pending` status, ingestion skipped.  
-✅ File re-saved with no changes → Skipped (no duplicate processing).  
-✅ Metadata-only changes (e.g., file date/asset ID in filename) → Metadata updated accordingly.  
-✅ Row additions/edits → Only new or modified rows are inserted.  
-✅ Old rows preserved → Because row hashes prevent duplication.  
-✅ Safe re-runs → Script is idempotent; running multiple times won’t cause duplicate inserts.  
-✅ Fail-safe logging → Every step (detected, skipped, ingested, updated) is logged clearly.  
+---
+
+## 🔍 Corner Cases Handled  
+This script isn’t just about "happy path" ingestion — it takes care of tricky real-world scenarios:  
+
+1. **Unchanged File Re-Save**  
+   - If a user opens a file and re-saves it without changes, the file will **not** be reprocessed.  
+
+2. **Changed Metadata (File/Sheet Names)**  
+   - If the file/sheet name changes (e.g., date changed in name), the **report_metadata table** is updated automatically.  
+
+3. **New Rows Added**  
+   - If extra rows are added to an existing file, **only the new rows** are inserted into the DB.  
+
+4. **Duplicate Row Prevention**  
+   - Re-saved or re-uploaded files won’t create duplicate data in the DB.  
+
+5. **Partial Edits with Revert**  
+   - If a row is edited and reverted back, no unnecessary DB operations occur.  
+
+6. **Simultaneous Users**  
+   - Multiple users can open/edit the file — only real changes are processed.  
+
+---
+
+## 📂 Database Structure  
+
+**1. `raw_report_jfrog`**  
+- Stores the actual Excel row data.  
+- Deduplication is ensured using **row-level SHA256 hashes** (handled internally, not extra columns in DB).  
+
+**2. `report_metadata`**  
+- Tracks details about each file (name, sheet, date, etc.).  
+- Automatically updated when metadata changes.  
+
+---
+
+## ▶️ How It Works  
+1. Place Excel files in the **watched folder**  
+2. Script (via **Watchdog**) detects file creation or modification  
+3. File contents are read using **Pandas**  
+4. Each row is hashed (SHA256) → prevents duplicates  
+5. New rows are inserted into `raw_report_jfrog`  
+6. Metadata is inserted/updated in `report_metadata`  
+7. Plain logs are written for each action  
 
