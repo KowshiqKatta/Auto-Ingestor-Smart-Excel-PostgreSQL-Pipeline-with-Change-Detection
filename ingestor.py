@@ -11,11 +11,11 @@ from datetime import datetime
 
 # ------------------- DB CONFIG -------------------
 DB_CONFIG = {
-    "dbname": "afscstanalysis",
-    "user": "genwizcstuser",
-    "password": "Afs@aehfederalcst",
-    "host": "uat-rds-postgres-db.cpsaue0sum5w.us-east-1.rds.amazonaws.com",
-    "port": "5432"
+    "dbname": "",
+    "user": "",
+    "password": "",
+    "host": "",
+    "port": ""
 }
 
 # ------------------- SHARED FOLDER -------------------
